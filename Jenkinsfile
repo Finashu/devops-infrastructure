@@ -16,7 +16,6 @@ pipeline {
                     accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
                     secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                 ]]) {
-                    // Added -input=false
                     sh 'terraform init -input=false'
                 }
             }
@@ -30,8 +29,12 @@ pipeline {
                     accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
                     secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                 ]]) {
-                    // Enabled verbose tracking logs and disabled prompt waiting
-                    withEnv(['TF_LOG=DEBUG', 'AWS_DEFAULT_REGION=us-east-1']) {
+                    // Added environment variables to bypass the AWS metadata service check and stop the hanging behavior
+                    withEnv([
+                        'TF_LOG=DEBUG', 
+                        'AWS_DEFAULT_REGION=us-east-1', 
+                        'AWS_EC2_METADATA_DISABLED=true'
+                    ]) {
                         sh 'terraform plan -input=false -out=tfplan'
                     }
                 }
@@ -46,7 +49,12 @@ pipeline {
                     accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
                     secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                 ]]) {
-                    sh 'terraform apply -input=false -auto-approve tfplan'
+                    withEnv([
+                        'AWS_DEFAULT_REGION=us-east-1', 
+                        'AWS_EC2_METADATA_DISABLED=true'
+                    ]) {
+                        sh 'terraform apply -input=false -auto-approve tfplan'
+                    }
                 }
             }
         }
