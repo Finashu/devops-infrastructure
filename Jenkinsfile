@@ -4,7 +4,6 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                // Pulls code from your GitHub repo using the credential you created
                 git branch: 'main', credentialsId: 'github-ssh-key', url: 'git@github.com:Finashu/devops-infrastructure.git'
             }
         }
@@ -17,7 +16,8 @@ pipeline {
                     accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
                     secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                 ]]) {
-                    sh 'terraform init'
+                    // Added -input=false
+                    sh 'terraform init -input=false'
                 }
             }
         }
@@ -30,7 +30,10 @@ pipeline {
                     accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
                     secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                 ]]) {
-                    sh 'terraform plan -out=tfplan'
+                    // Enabled verbose tracking logs and disabled prompt waiting
+                    withEnv(['TF_LOG=DEBUG', 'AWS_DEFAULT_REGION=us-east-1']) {
+                        sh 'terraform plan -input=false -out=tfplan'
+                    }
                 }
             }
         }
@@ -43,8 +46,7 @@ pipeline {
                     accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
                     secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                 ]]) {
-                    // Automatically approves and applies the generated infrastructure plan
-                    sh 'terraform apply -auto-approve tfplan'
+                    sh 'terraform apply -input=false -auto-approve tfplan'
                 }
             }
         }
